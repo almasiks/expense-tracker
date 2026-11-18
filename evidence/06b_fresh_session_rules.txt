@@ -1,0 +1,31 @@
+# Answer to "Without reading any files: what actions are forbidden in this repo, and what must you do before committing?"
+# Saved verbatim on 2026-11-19 (screenshot: evidence/06b_same_session.png, 12:09 AM).
+# PROVENANCE: NOT a fresh session. It was answered in the same Claude Code conversation that had run Tasks 06-09,
+# with AGENTS.md already in context (the answer says so itself: "still loaded in my context", "It hasn't changed
+# this session", and it cites findings from docs/06). Like evidence/06, it does not prove that a new session loads
+# the rules through CLAUDE.md -> @AGENTS.md.
+
+Both lists come from AGENTS.md, which is still loaded in my context, so I didn't open any files. It hasn't changed this session.
+
+## Forbidden
+- Committing secrets, `.env` files or real personal data, including any real `expenses.json`.
+- Any kind of production deployment.
+- Destructive commands: `rm -rf`, `git push --force`, `git reset --hard`, `git clean -fd`, rewriting history, or moving or deleting the `baseline` tag.
+- Adding or upgrading dependencies without review. The app stays stdlib-only.
+- Writing to the real `expenses.json`. The CLI may only run with `--file` pointing to a temp or demo file.
+- Disabling, skipping, deleting or weakening tests to make them pass.
+- Fabricating, editing or summarizing away test or tool output.
+
+These also need your approval first: `pip install` or changes to `requirements.txt`, `git commit`, `git push`, deleting files (except a demo file I created in the same session), and editing `ACCEPTANCE.md`.
+
+## Before committing
+1. **One concern only:** the commit holds a single focused change.
+2. **Tests:** the new or changed behavior has tests in `tests/` that use `tmp_path`, and `python -m pytest -v` reports **0 failed**. I report the exact counts from the real run.
+3. **Lint and types:** `ruff check .` and `mypy tracker` show no new issues compared with the baseline.
+4. **Acceptance:** AC1–AC5 in `ACCEPTANCE.md` still hold.
+5. **Show you the work:** you see the `git diff` and the real test output.
+6. **Your approval:** I commit only after you approve. Pushing needs a separate approval.
+
+The readiness audit (`docs/06`) found two gaps in these rules:
+- **Weak test floor:** the floor is still the baseline numbers (7 passed, 49% coverage), not the current 40 passed and 87%, so a large regression wouldn't break the rule.
+- **Staging rule missing:** the "stage files by explicit path, never `git add .`" rule recommended for R8 isn't in AGENTS.md yet. I followed it anyway in every commit this session.
