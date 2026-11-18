@@ -1,0 +1,21 @@
+I'm answering from AGENTS.md, which I wrote earlier in this conversation and still have in context, including the Task 03 update.
+
+**Forbidden**
+- Committing secrets, `.env` files or real personal data, including any real `expenses.json`.
+- Production deployment of any kind.
+- Destructive commands: `rm -rf`, `git push --force`, `git reset --hard`, `git clean -fd`, rewriting history, or moving or deleting the `baseline` tag.
+- Adding or upgrading dependencies without review.
+- Writing to the real `expenses.json`. This means never running the CLI without `--file` pointing to a temp or demo file.
+- Disabling, skipping, deleting or weakening tests to make them pass.
+- Fabricating, editing or glossing over test or tool output. I report what actually ran.
+
+These need your approval first: `pip install` or changing `requirements.txt`, `git commit`, `git push` (approved separately from the commit), deleting files other than a demo file I created myself, and editing `ACCEPTANCE.md`.
+
+**Before committing**
+1. Keep it to one focused change per commit.
+2. Add a test in `tests/` for every behavior change. Tests use `tmp_path` and never the real data file. A new export format means a new exporter class plus an `EXPORTERS` entry plus a test in `tests/test_export.py`.
+3. Run the full suite with `python -m pytest -v`. It must report **0 failed**, and I report the exact counts.
+4. Run `ruff check .` and `mypy tracker`. They must show no new issues compared with the baseline.
+5. Make sure acceptance criteria AC1–AC5 in `ACCEPTANCE.md` still hold.
+6. Show you the `git diff` and the real test output.
+7. Wait for your approval, and only then commit. Pushing needs its own separate approval.

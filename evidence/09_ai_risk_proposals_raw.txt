@@ -1,0 +1,111 @@
+Here are 8 candidate risks from a read-only review of current `main` (`1c45896`). I didn't modify, create or delete any files, and I haven't run any of the verification commands. Line numbers are from the files as they are now; `service.py` shifted by one line after Task 03.
+
+There's also a side observation, not one of the 8. The file you have open is at **`evidence/evidence/06_agent_instructions_loaded.txt`**: a nested folder, and untracked. It's probably meant to be `evidence/06_...`.
+
+---
+
+### R1: Duplicate expense IDs after delete
+- **Category:** correctness
+- **Confidence:** high
+- **Location:** `tracker/service.py:14-15` `_next_id()` (`len(self.expenses) + 1`), used at `:23`; affects `delete_expense` `:33-39`
+- **Cause → event → consequence:** the ID is derived from the list length, not from the largest existing ID. After deleting an expense, the next one gets an ID that's already in use. Two records then share an ID, `delete N` removes only the first match, and the user can delete the wrong expense.
+- **Verify:**
+  ```
+  python -m tracker.cli --file demo.json add 100 food
+  python -m tracker.cli --file demo.json add 200 food
+  python -m tracker.cli --file demo.json add 300 food
+  python -m tracker.cli --file demo.json delete 1
+  python -m tracker.cli --file demo.json add 400 food
+  python -m tracker.cli --file demo.json list        # expect two rows with "#3"
+  ```
+  Test idea: add 3 expenses, delete id 1, add 1 more, then `assert len({e.id for e in service.list_expenses()}) == 3`.
+
+### R2: Amount is not validated (negative, NaN, inf; bad input crashes)
+- **Category:** correctness
+- **Confidence:** high for negative amounts (already seen in `evidence/05`); medium for NaN and inf
+- **Location:** `tracker/service.py:24` `amount=float(amount)`; `tracker/cli.py:13` (`amount` has no `type=`)
+- **Cause → event → consequence:** `float()` accepts `-500`, `nan`, `inf` and `1e309`, and rejects `1,5` with an exception nobody catches. Totals silently become wrong or `nan`. `json.dump` writes `NaN`/`Infinity`, which isn't valid standard JSON. A comma typo gives the user a raw traceback.
+- **Verify:** `add nan food`, `add inf food`, then `summary`; `add 1,5 food` should give a traceback. Test idea: `pytest.raises(ValueError)` for `-1`, `0`, `nan` and `inf`. It fails today, which is the point.
+
+### R3: Dates are not validated, and the month filter matches by prefix
+- **Category:** correctness
+- **Confidence:** high
+- **Location:** `tracker/service.py:20-21` (`when` stored as-is), `:45-46` (`e.date.startswith(month)`); `tracker/cli.py:16, 20, 26`
+- **Cause → event → consequence:** `--date 2026-13-99` or `--date hello` is stored as given. `--month 2026-1` is a prefix of `2026-10`, `2026-11` and `2026-12`, so a monthly summary can silently include three other months.
+- **Verify:** add expenses dated `2026-01-05` and `2026-11-05`, then run `summary --month 2026-1`; expect both to be counted. Test idea: `service.total(month="2026-1")` should equal only the January amount.
+
+### R4: Data file can be lost or corrupted (non-atomic save; export can overwrite it)
+- **Category:** correctness / data integrity
+- **Confidence:** high for the overwrite; medium for a crash in the middle of a write
+- **Location:** `tracker/storage.py:20-22` (`open(path, "w")` empties the file, then writes it); `:16-17` (`json.load` with no error handling); `tracker/exporters.py:20, 29, 35` (`open(path, "w")` on any path, no overwrite check)
+- **Cause → event → consequence:** `export csv expenses.json` (or the `--file` path) replaces the data file with CSV. Every later command then fails on `json.load` with a `JSONDecodeError` traceback, and there's no backup. A crash or Ctrl+C during `save()` has the same effect.
+- **Verify:**
+  ```
+  python -m tracker.cli --file demo.json add 100 food
+  python -m tracker.cli --file demo.json export csv demo.json
+  python -m tracker.cli --file demo.json list        # expect a JSONDecodeError traceback
+  ```
+  Test idea: monkeypatch `json.dump` to raise inside `save()`, then assert the original file contents still survive.
+
+### R5: CSV export without quoting (broken columns, formula injection)
+- **Category:** security
+- **Confidence:** high for broken columns (currently pinned by `test_export_csv_exact_format`); medium for formula injection being a real threat in a personal tool
+- **Location:** `tracker/exporters.py:21-23` `CsvExporter.export` (f-string rows instead of the `csv` module)
+- **Cause → event → consequence:**
+  - A description containing `,`, `"` or a newline shifts or splits columns, so the report is corrupted.
+  - A description starting with `=`, `+`, `-` or `@` (e.g. `=HYPERLINK(...)`) runs as a formula when the CSV is opened in Excel or Sheets.
+- **Verify:** `add 100 food -d "a,b"`, then `export csv out.csv`; reading `out.csv` with `csv.reader` should give a row with 6 fields instead of 5. Also `add 1 food -d "=1+1"`, export, and open the file in Excel.
+
+### R6: Dependencies unpinned and incomplete; no Python version declared
+- **Category:** dependency
+- **Confidence:** high
+- **Location:** `requirements.txt:1` (`pytest`, no version); no `pyproject.toml`, no dev-requirements file
+- **Cause → event → consequence:**
+  - `pytest-cov`, `ruff` and `mypy` aren't declared anywhere, so a fresh clone can't run the "safe commands" in AGENTS.md.
+  - Unpinned versions mean ruff's default rules and mypy's behavior change between machines and dates. For example, `I001`/`FURB122` appeared under ruff 0.17.5. The baseline numbers in `docs/01-baseline.md` then can't be reproduced.
+  - The code needs Python 3.9+ (`dict[str, ...]`, `collections.abc`), but nothing declares that.
+- **Verify:** in a fresh venv, `pip install -r requirements.txt`, then `ruff check .` should give "command not found". Run `pip freeze` on two machines or dates and compare. `ruff check --isolated .` with another ruff version should give a different finding count.
+
+### R7: Duplicated logic, untyped core and an untested CLI
+- **Category:** maintainability
+- **Confidence:** medium
+- **Location:**
+  - The total loop is duplicated: `tracker/service.py:49-53` and `tracker/exporters.py:43-49` (I introduced the second copy in Task 03).
+  - The default file is defined twice: `tracker/cli.py:9` and `tracker/storage.py:6` (`DEFAULT_FILE`, which `cli.py` doesn't use).
+  - `CATEGORIES` lives in `service.py:6`, but the CLI help reads it.
+  - The `ExpenseService` methods have no type hints, so mypy skips their bodies.
+  - `cli.py` has 0% coverage.
+- **Cause → event → consequence:** someone changes one copy (e.g. how totals are calculated) and not the other. The TXT export `TOTAL:` then disagrees with `summary`, or a CLI wiring bug ships unnoticed. mypy says "Success" while checking almost nothing.
+- **Verify:**
+  - `python -m mypy --check-untyped-defs tracker` should report errors that plain mypy doesn't (earlier: `var-annotated` at the `result = {}` line, now `service.py:56`).
+  - The coverage command shows `cli.py 0%`.
+  - Test idea: assert that the TXT export's `TOTAL:` equals `f"{service.total():.2f}"` across tricky float sets.
+
+### R8: Agent rules exist only as text and don't protect personal data
+- **Category:** agent operations
+- **Confidence:** medium-high
+- **Location:** `tracker/cli.py:9` (`--file` defaults to `./expenses.json`); `.gitignore:5-6` (ignores only `expenses.json` and `*.csv`); `AGENTS.md` (prose only; no hooks, pre-commit or CI); `CLAUDE.md` (Claude loads the rules only through the `@AGENTS.md` import)
+- **Cause → event → consequence:**
+  - An agent runs the CLI without `--file` and writes to the real data file.
+  - It creates `demo.json` or `report.txt`, or uses a custom `--file my.json`. None of these are ignored, so a `git add .` commits personal financial data to the public repo.
+  - All the gates (tests pass, ruff and mypy show no new issues) are self-reported by the agent, and nothing reproduces them independently. Evidence files could be wrong, or saved to the wrong path, as the nested `evidence/evidence/` suggests, without anyone noticing.
+- **Verify:**
+  - `git check-ignore -v demo.json report.txt my.json` should report all three as not ignored.
+  - In an empty temp folder, `python -m tracker.cli summary` should create no file, while `add 1 food` with no `--file` should create `./expenses.json`.
+  - `ls .github .pre-commit-config.yaml` should show neither exists.
+  - Remove the `@AGENTS.md` line from CLAUDE.md in a scratch copy, start a new session there, and check whether the rules are still known.
+
+---
+
+| ID | Category | Confidence |
+|---|---|---|
+| R1 | correctness | high |
+| R2 | correctness | high (negative) / medium (NaN, inf) |
+| R3 | correctness | high |
+| R4 | correctness / data integrity | high (overwrite) / medium (crash) |
+| R5 | security | high (columns) / medium (injection) |
+| R6 | dependency | high |
+| R7 | maintainability | medium |
+| R8 | agent operations | medium-high |
+
+R2 and R4 are partly confirmed already: negative amounts are in `evidence/05`, and the data file written in place is visible in the code. The others are unverified until you run the commands above. 

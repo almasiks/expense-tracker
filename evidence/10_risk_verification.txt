@@ -1,0 +1,506 @@
+# Task 04 Phase 2 — risk verification raw output
+# repo HEAD: 1c45896; temp dir: /tmp/tmp.gdw6F9iSy2
+# 'python' below = /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python ; CLI run with cwd=temp dir, PYTHONPATH=repo
+
+=================== R1 duplicate IDs after delete ===================
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r1.json add 100 food
+Added #1: 100.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r1.json add 200 food
+Added #2: 200.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r1.json add 300 food
+Added #3: 300.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r1.json delete 1
+Deleted #1
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r1.json add 400 food
+Added #3: 400.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r1.json list
+#2   2026-11-18  food               200.00  
+#3   2026-11-18  food               300.00  
+#3   2026-11-18  food               400.00  
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r1.json delete 3
+Deleted #3
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r1.json list
+#2   2026-11-18  food               200.00  
+#3   2026-11-18  food               400.00  
+[exit 0]
+
+
+=================== R2 amount validation ===================
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r2.json add -500 food
+Added #1: -500.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r2.json add 0 food
+Added #2: 0.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r2.json add nan food
+Added #3: nan (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r2.json add inf food
+Added #4: inf (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r2.json add 1e309 food
+Added #5: inf (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r2.json summary
+food                  nan
+TOTAL                 nan
+[exit 0]
+
+$ cat r2.json
+[
+  {
+    "id": 1,
+    "amount": -500.0,
+    "category": "food",
+    "description": "",
+    "date": "2026-11-18"
+  },
+  {
+    "id": 2,
+    "amount": 0.0,
+    "category": "food",
+    "description": "",
+    "date": "2026-11-18"
+  },
+  {
+    "id": 3,
+    "amount": NaN,
+    "category": "food",
+    "description": "",
+    "date": "2026-11-18"
+  },
+  {
+    "id": 4,
+    "amount": Infinity,
+    "category": "food",
+    "description": "",
+    "date": "2026-11-18"
+  },
+  {
+    "id": 5,
+    "amount": Infinity,
+    "category": "food",
+    "description": "",
+    "date": "2026-11-18"
+  }
+][exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -c import json; json.loads(open('r2.json',encoding='utf-8').read(), parse_constant=lambda c: (_ for _ in ()).throw(ValueError('non-standard JSON constant: '+c)))
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json; json.loads(open('r2.json',encoding='utf-8').read(), parse_constant=lambda c: (_ for _ in ()).throw(ValueError('non-standard JSON constant: '+c)))
+                 ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\json\__init__.py", line 365, in loads
+    return cls(**kw).decode(s)
+           ~~~~~~~~~~~~~~~~^^^
+  File "C:\Python314\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\json\decoder.py", line 361, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ~~~~~~~~~~~~~~^^^^^^^^
+  File "<string>", line 1, in <lambda>
+    import json; json.loads(open('r2.json',encoding='utf-8').read(), parse_constant=lambda c: (_ for _ in ()).throw(ValueError('non-standard JSON constant: '+c)))
+                                                                                              ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 1, in <genexpr>
+    import json; json.loads(open('r2.json',encoding='utf-8').read(), parse_constant=lambda c: (_ for _ in ()).throw(ValueError('non-standard JSON constant: '+c)))
+ValueError: non-standard JSON constant: NaN
+[exit 1]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r2b.json add 1,5 food
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\cli.py", line 65, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\cli.py", line 39, in main
+    e = service.add_expense(args.amount, args.category, args.description, args.date)
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\service.py", line 24, in add_expense
+    amount=float(amount),
+           ~~~~~^^^^^^^^
+ValueError: could not convert string to float: '1,5'
+[exit 1]
+
+
+=================== R3 date validation and month prefix ===================
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r3.json add 100 food --date hello
+Added #1: 100.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r3.json add 200 food --date 2026-13-99
+Added #2: 200.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r3.json list
+#1   hello  food               100.00  
+#2   2026-13-99  food               200.00  
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r3m.json add 10 food --date 2026-01-05
+Added #1: 10.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r3m.json add 1000 food --date 2026-11-05
+Added #2: 1000.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r3m.json summary --month 2026-1
+food              1000.00
+TOTAL             1000.00
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r3m.json summary --month 2026-01
+food                10.00
+TOTAL               10.00
+[exit 0]
+
+
+=================== R4a export overwrites the data file ===================
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r4.json add 100 food
+Added #1: 100.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r4.json export csv r4.json
+Exported to r4.json
+[exit 0]
+
+$ cat r4.json
+id,date,category,amount,description
+1,2026-11-18,food,100.0,
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r4.json list
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\cli.py", line 65, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\cli.py", line 36, in main
+    service = ExpenseService(JsonStorage(args.file))
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\service.py", line 12, in __init__
+    self.expenses = storage.load()
+                    ~~~~~~~~~~~~^^
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\storage.py", line 17, in load
+    data = json.load(f)
+  File "C:\Python314\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Python314\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Python314\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+[exit 1]
+
+
+=================== R4b crash during save() (json.dump raises mid-write) ===================
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r4b.json add 100 food -d original
+Added #1: 100.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -c 
+import tracker.storage as st
+from tracker.service import ExpenseService
+s = ExpenseService(st.JsonStorage('r4b.json'))
+def boom(*a, **k): raise KeyboardInterrupt('simulated Ctrl+C inside json.dump')
+st.json.dump = boom
+try:
+    s.add_expense(200, 'food')
+except KeyboardInterrupt as e:
+    print('interrupted:', e)
+print('file size after interrupted save:', len(open('r4b.json','rb').read()), 'bytes')
+
+interrupted: simulated Ctrl+C inside json.dump
+file size after interrupted save: 0 bytes
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r4b.json list
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\cli.py", line 65, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\cli.py", line 36, in main
+    service = ExpenseService(JsonStorage(args.file))
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\service.py", line 12, in __init__
+    self.expenses = storage.load()
+                    ~~~~~~~~~~~~^^
+  File "C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\tracker\storage.py", line 17, in load
+    data = json.load(f)
+  File "C:\Python314\Lib\json\__init__.py", line 298, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Python314\Lib\json\__init__.py", line 352, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Python314\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+[exit 1]
+
+
+=================== R5 CSV without quoting / formula ===================
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r5.json add 100 food -d a,b
+Added #1: 100.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r5.json add 1 food -d =1+1
+Added #2: 1.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r5.json add 2 food -d say "hi"
+Added #3: 2.00 (food)
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli --file r5.json export csv r5.csv
+Exported to r5.csv
+[exit 0]
+
+$ cat r5.csv
+id,date,category,amount,description
+1,2026-11-18,food,100.0,a,b
+2,2026-11-18,food,1.0,=1+1
+3,2026-11-18,food,2.0,say "hi"
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -c import csv; [print(len(r), r) for r in csv.reader(open('r5.csv', encoding='utf-8', newline=''))]
+5 ['id', 'date', 'category', 'amount', 'description']
+6 ['1', '2026-11-18', 'food', '100.0', 'a', 'b']
+5 ['2', '2026-11-18', 'food', '1.0', '=1+1']
+5 ['3', '2026-11-18', 'food', '2.0', 'say "hi"']
+[exit 0]
+
+
+=================== R6 dependencies ===================
+$ cat /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/requirements.txt
+pytest
+[exit 0]
+
+$ ls -a /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker
+.
+..
+.coverage
+.git
+.gitignore
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.venv
+ACCEPTANCE.md
+AGENTS.md
+CLAUDE.md
+README.md
+docs
+evidence
+requirements.txt
+tests
+tracker
+[exit 0]
+
+$ grep -rnE pytest-cov|ruff|mypy|python_requires|requires-python /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/requirements.txt /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/README.md
+[exit 1]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m pip freeze
+ast_serialize==0.13.1
+colorama==0.4.6
+coverage==7.17.3
+iniconfig==2.3.1
+librt==0.16.0
+mypy==2.4.1
+mypy_extensions==1.2.0
+packaging==26.3
+pathspec==1.1.1
+pluggy==1.7.0
+Pygments==2.21.0
+pytest==9.2.0
+pytest-cov==7.1.0
+ruff==0.17.5
+typing_extensions==4.16.0
+[exit 0]
+
+$ py -0p
+ -V:3.14 *        C:\Python314\python.exe
+ -V:3.12          C:\Users\ACER\AppData\Local\Programs\Python\Python312\python.exe
+ -V:3.11          C:\Users\ACER\AppData\Local\Programs\Python\Python311\python.exe
+[exit 0]
+
+$ grep -nE dict\[|collections.abc /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/exporters.py
+8:from collections.abc import Sequence
+52:EXPORTERS: dict[str, Exporter] = {
+[exit 0]
+
+
+=================== R7 maintainability ===================
+$ grep -nE total = 0|total \+= e.amount /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/service.py /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/exporters.py
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/service.py:50:        total = 0
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/service.py:52:            total += e.amount
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/exporters.py:46:    total = 0.0
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/exporters.py:48:        total += e.amount
+[exit 0]
+
+$ grep -rnE expenses.json|DEFAULT_FILE /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/cli.py:9:    parser.add_argument("--file", default="expenses.json", help="data file")
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/storage.py:6:DEFAULT_FILE = "expenses.json"
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/storage.py:10:    def __init__(self, path=DEFAULT_FILE):
+Binary file /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/__pycache__/cli.cpython-314.pyc matches
+Binary file /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/__pycache__/storage.cpython-314.pyc matches
+[exit 0]
+
+$ grep -rnE CATEGORIES /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/cli.py:3:from tracker.service import ExpenseService, CATEGORIES
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/cli.py:14:    add.add_argument("category", help="one of: " + ", ".join(CATEGORIES))
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/service.py:6:CATEGORIES = ["food", "transport", "rent", "entertainment", "other"]
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/service.py:18:        if category not in CATEGORIES:
+Binary file /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/__pycache__/cli.cpython-314.pyc matches
+Binary file /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/__pycache__/service.cpython-314.pyc matches
+[exit 0]
+
+$ grep -nE def .*->|def .*: (str|int|float) /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/tracker/service.py
+61:    def export(self, fmt: str, path: str) -> None:
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m mypy tracker
+Success: no issues found in 6 source files
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m mypy --check-untyped-defs tracker
+tracker\service.py:56: error: Need type annotation for "result" (hint: "result: dict[<type>, <type>] = ...")  [var-annotated]
+Found 1 error in 1 file (checked 6 source files)
+[exit 1]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m pytest -q --cov=tracker --cov-report=term-missing -p no:cacheprovider
+............                                                             [100%]
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.3-final-0 _______________
+
+Name                   Stmts   Miss  Cover   Missing
+----------------------------------------------------
+tracker\__init__.py        0      0   100%
+tracker\cli.py            50     50     0%   1-65
+tracker\exporters.py      25      0   100%
+tracker\models.py          8      0   100%
+tracker\service.py        48      2    96%   39, 44
+tracker\storage.py        16      0   100%
+----------------------------------------------------
+TOTAL                    147     52    65%
+12 passed in 0.46s
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -c 
+import random, tempfile, os
+from tracker.service import ExpenseService
+from tracker.storage import JsonStorage
+random.seed(4); d = tempfile.mkdtemp(); diffs = 0; N = 2000
+for i in range(N):
+    s = ExpenseService(JsonStorage(os.path.join(d, f'{i}.json')))
+    for _ in range(random.randint(0, 8)):
+        s.expenses.append(type(s.expenses).__class_getitem__ and __import__('tracker.models', fromlist=['Expense']).Expense(0, random.choice([0.1, 0.2, 0.3, 1e16, -1e16, 1/3, random.uniform(-1e6, 1e6)]), 'food', '', '2026-11-01'))
+    p = os.path.join(d, f'{i}.txt'); s.export('txt', p)
+    last = open(p, encoding='utf-8').read().splitlines()[-1]
+    if last != f'TOTAL: {s.total():.2f}': diffs += 1; print('DIFF', last, s.total())
+print(f'{N} random sets: TXT TOTAL vs service.total() mismatches = {diffs}')
+
+2000 random sets: TXT TOTAL vs service.total() mismatches = 0
+[exit 0]
+
+
+=================== R8 agent operations ===================
+$ git check-ignore -v --no-index expenses.json demo.json report.txt my.json r.csv
+.gitignore:5:expenses.json	expenses.json
+.gitignore:6:*.csv	r.csv
+[exit 0]
+
+$ git status --short --ignored
+?? evidence/06_agent_instructions_loaded.txt
+?? evidence/09_ai_risk_proposals_raw.txt
+?? evidence/10_risk_verification.txt
+!! .coverage
+!! .mypy_cache/
+!! .pytest_cache/
+!! .ruff_cache/
+!! .venv/
+!! tests/__pycache__/
+!! tracker/__pycache__/
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli summary
+TOTAL                0.00
+[exit 0]
+
+$ ls -a
+.
+..
+[exit 0]
+
+$ /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.venv/Scripts/python -m tracker.cli add 1 food
+Added #1: 1.00 (food)
+[exit 0]
+
+$ ls -a
+.
+..
+expenses.json
+[exit 0]
+
+$ ls -a /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.github /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.pre-commit-config.yaml /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.git/hooks
+ls: cannot access '/c/Users/ACER/OneDrive/Рабо�'$'\207''ий �'$'\201''�'$'\202''ол/Pet_projects/expense-tracker/.github': No such file or directory
+ls: cannot access '/c/Users/ACER/OneDrive/Рабо�'$'\207''ий �'$'\201''�'$'\202''ол/Pet_projects/expense-tracker/.pre-commit-config.yaml': No such file or directory
+/c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/.git/hooks:
+.
+..
+applypatch-msg.sample
+commit-msg.sample
+fsmonitor-watchman.sample
+post-update.sample
+pre-applypatch.sample
+pre-commit.sample
+pre-merge-commit.sample
+pre-push.sample
+pre-rebase.sample
+pre-receive.sample
+prepare-commit-msg.sample
+push-to-checkout.sample
+sendemail-validate.sample
+update.sample
+[exit 2]
+
+$ cat /c/Users/ACER/OneDrive/Рабочий стол/Pet_projects/expense-tracker/CLAUDE.md
+@AGENTS.md
+Claude Code does not load AGENTS.md automatically; this import makes it load.
+[exit 0]
+
+# NOTE: 'start a new Claude session without the @AGENTS.md import' was NOT run (cannot be done from this session).
+# NOTE: no fresh-venv 'pip install -r requirements.txt' and no other ruff version were installed (AGENTS.md: installs need approval).
