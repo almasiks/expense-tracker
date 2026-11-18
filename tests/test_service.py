@@ -51,3 +51,37 @@ def test_delete(service):
     e = service.add_expense(100, "food")
     assert service.delete_expense(e.id) is True
     assert service.list_expenses() == []
+
+
+def _ids(service: ExpenseService) -> list[int]:
+    return [e.id for e in service.list_expenses()]
+
+
+@pytest.mark.parametrize("deleted_id", [2, 1])
+def test_new_id_is_unique_after_delete(service, deleted_id):
+    # deleted_id=1 reproduces evidence/10, section "R1 duplicate IDs after delete"
+    for amount in (100, 200, 300):
+        service.add_expense(amount, "food")
+    service.delete_expense(deleted_id)
+
+    new = service.add_expense(400, "food")
+
+    assert new.id == 4
+    assert len(_ids(service)) == len(set(_ids(service)))
+
+
+@pytest.mark.parametrize("deleted_id", [2, 1])
+def test_delete_new_record_removes_exactly_that_record(tmp_path, deleted_id):
+    path = str(tmp_path / "data.json")
+    service = ExpenseService(JsonStorage(path))
+    for amount in (100, 200, 300):
+        service.add_expense(amount, "food")
+    service.delete_expense(deleted_id)
+    new = service.add_expense(400, "food")
+
+    assert service.delete_expense(new.id) is True
+
+    reloaded = ExpenseService(JsonStorage(path))
+    remaining = sorted(e.amount for e in reloaded.list_expenses())
+    expected = sorted({100, 200, 300} - {deleted_id * 100})
+    assert remaining == expected

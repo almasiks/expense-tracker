@@ -1,0 +1,135 @@
+$ python -m pytest -v
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.2.0, pluggy-1.7.0 -- C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker
+plugins: cov-7.1.0
+collecting ... collected 16 items
+
+tests/test_export.py::test_export_csv_exact_format PASSED                [  6%]
+tests/test_export.py::test_export_json_loads_back_to_same_dicts PASSED   [ 12%]
+tests/test_export.py::test_export_json_exact_format PASSED               [ 18%]
+tests/test_export.py::test_export_txt_lines_and_total PASSED             [ 25%]
+tests/test_export.py::test_export_unknown_format_raises_and_creates_no_file PASSED [ 31%]
+tests/test_service.py::test_add_expense PASSED                           [ 37%]
+tests/test_service.py::test_unknown_category_becomes_other PASSED        [ 43%]
+tests/test_service.py::test_total PASSED                                 [ 50%]
+tests/test_service.py::test_filter_by_month PASSED                       [ 56%]
+tests/test_service.py::test_totals_by_category PASSED                    [ 62%]
+tests/test_service.py::test_data_is_saved PASSED                         [ 68%]
+tests/test_service.py::test_delete PASSED                                [ 75%]
+tests/test_service.py::test_new_id_is_unique_after_delete[2] FAILED      [ 81%]
+tests/test_service.py::test_new_id_is_unique_after_delete[1] FAILED      [ 87%]
+tests/test_service.py::test_delete_new_record_removes_exactly_that_record[2] FAILED [ 93%]
+tests/test_service.py::test_delete_new_record_removes_exactly_that_record[1] FAILED [100%]
+
+================================== FAILURES ===================================
+____________________ test_new_id_is_unique_after_delete[2] ____________________
+
+service = <tracker.service.ExpenseService object at 0x000002031FA7D470>
+deleted_id = 2
+
+    @pytest.mark.parametrize("deleted_id", [2, 1])
+    def test_new_id_is_unique_after_delete(service, deleted_id):
+        # deleted_id=1 reproduces evidence/10, section "R1 duplicate IDs after delete"
+        for amount in (100, 200, 300):
+            service.add_expense(amount, "food")
+        service.delete_expense(deleted_id)
+    
+        new = service.add_expense(400, "food")
+    
+>       assert new.id == 4
+E       AssertionError: assert 3 == 4
+E        +  where 3 = Expense(id=3, amount=400.0, category='food', description='', date='2026-11-18').id
+
+tests\test_service.py:69: AssertionError
+____________________ test_new_id_is_unique_after_delete[1] ____________________
+
+service = <tracker.service.ExpenseService object at 0x000002031F8EF450>
+deleted_id = 1
+
+    @pytest.mark.parametrize("deleted_id", [2, 1])
+    def test_new_id_is_unique_after_delete(service, deleted_id):
+        # deleted_id=1 reproduces evidence/10, section "R1 duplicate IDs after delete"
+        for amount in (100, 200, 300):
+            service.add_expense(amount, "food")
+        service.delete_expense(deleted_id)
+    
+        new = service.add_expense(400, "food")
+    
+>       assert new.id == 4
+E       AssertionError: assert 3 == 4
+E        +  where 3 = Expense(id=3, amount=400.0, category='food', description='', date='2026-11-18').id
+
+tests\test_service.py:69: AssertionError
+____________ test_delete_new_record_removes_exactly_that_record[2] ____________
+
+tmp_path = WindowsPath('C:/Users/ACER/AppData/Local/Temp/pytest-of-ACER/pytest-13/test_delete_new_record_removes0')
+deleted_id = 2
+
+    @pytest.mark.parametrize("deleted_id", [2, 1])
+    def test_delete_new_record_removes_exactly_that_record(tmp_path, deleted_id):
+        path = str(tmp_path / "data.json")
+        service = ExpenseService(JsonStorage(path))
+        for amount in (100, 200, 300):
+            service.add_expense(amount, "food")
+        service.delete_expense(deleted_id)
+        new = service.add_expense(400, "food")
+    
+        assert service.delete_expense(new.id) is True
+    
+        reloaded = ExpenseService(JsonStorage(path))
+        remaining = sorted(e.amount for e in reloaded.list_expenses())
+        expected = sorted({100, 200, 300} - {deleted_id * 100})
+>       assert remaining == expected
+E       AssertionError: assert [100.0, 400.0] == [100, 300]
+E         
+E         At index 1 diff: 400.0 != 300
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           [
+E         -     100,
+E         +     100.0,...
+E         
+E         ...Full output truncated, use '-vv' to show
+
+tests\test_service.py:87: AssertionError
+____________ test_delete_new_record_removes_exactly_that_record[1] ____________
+
+tmp_path = WindowsPath('C:/Users/ACER/AppData/Local/Temp/pytest-of-ACER/pytest-13/test_delete_new_record_removes1')
+deleted_id = 1
+
+    @pytest.mark.parametrize("deleted_id", [2, 1])
+    def test_delete_new_record_removes_exactly_that_record(tmp_path, deleted_id):
+        path = str(tmp_path / "data.json")
+        service = ExpenseService(JsonStorage(path))
+        for amount in (100, 200, 300):
+            service.add_expense(amount, "food")
+        service.delete_expense(deleted_id)
+        new = service.add_expense(400, "food")
+    
+        assert service.delete_expense(new.id) is True
+    
+        reloaded = ExpenseService(JsonStorage(path))
+        remaining = sorted(e.amount for e in reloaded.list_expenses())
+        expected = sorted({100, 200, 300} - {deleted_id * 100})
+>       assert remaining == expected
+E       AssertionError: assert [200.0, 400.0] == [200, 300]
+E         
+E         At index 1 diff: 400.0 != 300
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E           [
+E         -     200,
+E         +     200.0,...
+E         
+E         ...Full output truncated, use '-vv' to show
+
+tests\test_service.py:87: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_service.py::test_new_id_is_unique_after_delete[2] - Asserti...
+FAILED tests/test_service.py::test_new_id_is_unique_after_delete[1] - Asserti...
+FAILED tests/test_service.py::test_delete_new_record_removes_exactly_that_record[2]
+FAILED tests/test_service.py::test_delete_new_record_removes_exactly_that_record[1]
+======================== 4 failed, 12 passed in 0.47s =========================
+[exit 1]

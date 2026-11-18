@@ -11,8 +11,8 @@ class ExpenseService:
         self.storage = storage
         self.expenses = storage.load()
 
-    def _next_id(self):
-        return len(self.expenses) + 1
+    def _next_id(self) -> int:
+        return max((e.id for e in self.expenses), default=0) + 1
 
     def add_expense(self, amount, category, description="", when=None):
         if category not in CATEGORIES:
