@@ -85,3 +85,39 @@ def test_delete_new_record_removes_exactly_that_record(tmp_path, deleted_id):
     remaining = sorted(e.amount for e in reloaded.list_expenses())
     expected = sorted({100, 200, 300} - {deleted_id * 100})
     assert remaining == expected
+
+
+INVALID_AMOUNTS = [
+    -1,
+    -500,
+    0,
+    "0",
+    "-0.5",
+    float("nan"),
+    "nan",
+    float("inf"),
+    "inf",
+    "-inf",
+    "1e309",
+    "abc",
+    "1,5",
+    "",
+]
+
+
+@pytest.mark.parametrize("amount", INVALID_AMOUNTS)
+def test_invalid_amount_is_rejected_and_nothing_saved(tmp_path, amount):
+    path = str(tmp_path / "data.json")
+    service = ExpenseService(JsonStorage(path))
+    service.add_expense(100, "food")
+
+    with pytest.raises(ValueError, match="Amount must be"):
+        service.add_expense(amount, "food")
+
+    assert len(service.list_expenses()) == 1
+    assert len(ExpenseService(JsonStorage(path)).list_expenses()) == 1
+
+
+@pytest.mark.parametrize("amount, expected", [(1500, 1500.0), ("1500.50", 1500.5), ("0.01", 0.01)])
+def test_valid_amount_is_accepted(service, amount, expected):
+    assert service.add_expense(amount, "food").amount == expected

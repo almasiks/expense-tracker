@@ -1,6 +1,7 @@
 import argparse
+import sys
 
-from tracker.service import ExpenseService, CATEGORIES
+from tracker.service import CATEGORIES, ExpenseService
 from tracker.storage import JsonStorage
 
 
@@ -31,12 +32,16 @@ def build_parser():
     return parser
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     service = ExpenseService(JsonStorage(args.file))
 
     if args.command == "add":
-        e = service.add_expense(args.amount, args.category, args.description, args.date)
+        try:
+            e = service.add_expense(args.amount, args.category, args.description, args.date)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            return 1
         print(f"Added #{e.id}: {e.amount:.2f} ({e.category})")
     elif args.command == "list":
         items = service.list_expenses(args.category, args.month)
@@ -59,7 +64,8 @@ def main(argv=None):
         print(f"Exported to {args.path}")
     else:
         build_parser().print_help()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

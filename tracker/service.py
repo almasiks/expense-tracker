@@ -1,9 +1,20 @@
+import math
 from datetime import date
 
 from tracker.exporters import EXPORTERS
 from tracker.models import Expense
 
 CATEGORIES = ["food", "transport", "rent", "entertainment", "other"]
+
+
+def _parse_amount(amount: float | str) -> float:
+    try:
+        value = float(amount)
+    except (TypeError, ValueError):
+        raise ValueError(f"Amount must be a number, got {amount!r}") from None
+    if not math.isfinite(value) or value <= 0:
+        raise ValueError(f"Amount must be a positive finite number, got {amount!r}")
+    return value
 
 
 class ExpenseService:
@@ -14,14 +25,21 @@ class ExpenseService:
     def _next_id(self) -> int:
         return max((e.id for e in self.expenses), default=0) + 1
 
-    def add_expense(self, amount, category, description="", when=None):
+    def add_expense(
+        self,
+        amount: float | str,
+        category: str,
+        description: str = "",
+        when: str | None = None,
+    ) -> Expense:
+        value = _parse_amount(amount)
         if category not in CATEGORIES:
             category = "other"
         if when is None:
             when = date.today().isoformat()
         expense = Expense(
             id=self._next_id(),
-            amount=float(amount),
+            amount=value,
             category=category,
             description=description,
             date=when,
