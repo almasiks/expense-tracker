@@ -1,0 +1,4 @@
+Added #1: 1500.00 (food)
+Added #2: -500.00 (food)
+food              1000.00
+TOTAL             1000.00

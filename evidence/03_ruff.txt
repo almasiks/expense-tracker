@@ -1,0 +1,50 @@
+I001 [*] Import block is un-sorted or un-formatted
+ --> tracker\cli.py:1:1
+  |
+1 | / import argparse
+2 | |
+3 | | from tracker.service import ExpenseService, CATEGORIES
+4 | | from tracker.storage import JsonStorage
+  | |_______________________________________^
+help: Organize imports
+  |
+2 |
+  - from tracker.service import ExpenseService, CATEGORIES
+3 + from tracker.service import CATEGORIES, ExpenseService
+4 | from tracker.storage import JsonStorage
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> tracker\models.py:1:1
+  |
+1 | from dataclasses import dataclass, asdict
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Organize imports
+  |
+  - from dataclasses import dataclass, asdict
+1 + from dataclasses import asdict, dataclass
+2 |
+  |
+
+FURB122 [*] Use of `f.write` in a for loop
+  --> tracker\service.py:65:17
+   |
+63 |               with open(path, "w", encoding="utf-8") as f:
+64 |                   f.write("id,date,category,amount,description\n")
+65 | /                 for e in expenses:
+66 | |                     f.write(f"{e.id},{e.date},{e.category},{e.amount},{e.description}\n")
+   | |_________________________________________________________________________________________^
+67 |           elif fmt == "json":
+68 |               import json
+   |
+help: Replace with `f.writelines`
+   |
+64 |                 f.write("id,date,category,amount,description\n")
+   -                 for e in expenses:
+   -                     f.write(f"{e.id},{e.date},{e.category},{e.amount},{e.description}\n")
+65 +                 f.writelines(f"{e.id},{e.date},{e.category},{e.amount},{e.description}\n" for e in expenses)
+66 |         elif fmt == "json":
+   |
+
+Found 3 errors.
+[*] 3 fixable with `--fix`.
