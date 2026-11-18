@@ -1,0 +1,91 @@
+$ python -m pytest -v
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.2.0, pluggy-1.7.0 -- C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker
+plugins: cov-7.1.0
+collecting ... collected 12 items
+
+tests/test_export.py::test_export_csv_exact_format PASSED                [  8%]
+tests/test_export.py::test_export_json_loads_back_to_same_dicts PASSED   [ 16%]
+tests/test_export.py::test_export_json_exact_format PASSED               [ 25%]
+tests/test_export.py::test_export_txt_lines_and_total PASSED             [ 33%]
+tests/test_export.py::test_export_unknown_format_raises_and_creates_no_file PASSED [ 41%]
+tests/test_service.py::test_add_expense PASSED                           [ 50%]
+tests/test_service.py::test_unknown_category_becomes_other PASSED        [ 58%]
+tests/test_service.py::test_total PASSED                                 [ 66%]
+tests/test_service.py::test_filter_by_month PASSED                       [ 75%]
+tests/test_service.py::test_totals_by_category PASSED                    [ 83%]
+tests/test_service.py::test_data_is_saved PASSED                         [ 91%]
+tests/test_service.py::test_delete PASSED                                [100%]
+
+============================= 12 passed in 0.32s ==============================
+
+$ python -m pytest --cov=tracker --cov-report=term-missing
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-9.2.0, pluggy-1.7.0
+rootdir: C:\Users\ACER\OneDrive\Рабочий стол\Pet_projects\expense-tracker
+plugins: cov-7.1.0
+collected 12 items
+
+tests\test_export.py .....                                               [ 41%]
+tests\test_service.py .......                                            [100%]
+
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.14.3-final-0 _______________
+
+Name                   Stmts   Miss  Cover   Missing
+----------------------------------------------------
+tracker\__init__.py        0      0   100%
+tracker\cli.py            50     50     0%   1-65
+tracker\exporters.py      25      0   100%
+tracker\models.py          8      0   100%
+tracker\service.py        48      2    96%   39, 44
+tracker\storage.py        16      0   100%
+----------------------------------------------------
+TOTAL                    147     52    65%
+============================= 12 passed in 0.49s ==============================
+
+$ ruff check .
+I001 [*] Import block is un-sorted or un-formatted
+ --> tracker\cli.py:1:1
+  |
+1 | / import argparse
+2 | |
+3 | | from tracker.service import ExpenseService, CATEGORIES
+4 | | from tracker.storage import JsonStorage
+  | |_______________________________________^
+help: Organize imports
+  |
+2 |
+  - from tracker.service import ExpenseService, CATEGORIES
+3 + from tracker.service import CATEGORIES, ExpenseService
+4 | from tracker.storage import JsonStorage
+  |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> tracker\models.py:1:1
+  |
+1 | from dataclasses import dataclass, asdict
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: Organize imports
+  |
+  - from dataclasses import dataclass, asdict
+1 + from dataclasses import asdict, dataclass
+2 |
+  |
+
+Found 2 errors.
+[*] 2 fixable with `--fix`.
+
+$ mypy tracker
+Success: no issues found in 6 source files
+
+# Extra: byte-for-byte comparison of export output, pre-refactor code (commit d2e0a2f) vs refactored code
+('empty', 'csv') IDENTICAL 37 bytes
+('empty', 'json') IDENTICAL 2 bytes
+('empty', 'txt') IDENTICAL 13 bytes
+('varied', 'csv') IDENTICAL 239 bytes
+('varied', 'json') IDENTICAL 782 bytes
+('varied', 'txt') IDENTICAL 308 bytes
+ALL IDENTICAL

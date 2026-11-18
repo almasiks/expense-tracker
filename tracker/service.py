@@ -1,5 +1,6 @@
 from datetime import date
 
+from tracker.exporters import EXPORTERS
 from tracker.models import Expense
 
 CATEGORIES = ["food", "transport", "rent", "entertainment", "other"]
@@ -57,21 +58,8 @@ class ExpenseService:
             result[e.category] = result.get(e.category, 0) + e.amount
         return result
 
-    def export(self, fmt, path):
-        expenses = self.expenses
-        if fmt == "csv":
-            with open(path, "w", encoding="utf-8") as f:
-                f.write("id,date,category,amount,description\n")
-                for e in expenses:
-                    f.write(f"{e.id},{e.date},{e.category},{e.amount},{e.description}\n")
-        elif fmt == "json":
-            import json
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump([e.to_dict() for e in expenses], f, indent=2, ensure_ascii=False)
-        elif fmt == "txt":
-            with open(path, "w", encoding="utf-8") as f:
-                for e in expenses:
-                    f.write(f"[{e.date}] {e.category:<14} {e.amount:>10.2f}  {e.description}\n")
-                f.write(f"TOTAL: {self.total():.2f}\n")
-        else:
+    def export(self, fmt: str, path: str) -> None:
+        exporter = EXPORTERS.get(fmt)
+        if exporter is None:
             raise ValueError("Unknown format: " + fmt)
+        exporter.export(self.expenses, path)
