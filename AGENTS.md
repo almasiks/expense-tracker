@@ -12,18 +12,22 @@ summarize and export expenses; data is stored in a local JSON file. Pure Python,
 Dependency direction (one way only — never import "upwards"):
 
 ```
-tracker/cli.py  ->  tracker/service.py  ->  tracker/storage.py  ->  tracker/models.py
+tracker/cli.py  ->  tracker/service.py  ->  tracker/storage.py    ->  tracker/models.py
+                                        ->  tracker/exporters.py  ->  tracker/models.py
 ```
 
 | Module | Responsibility |
 |--------|----------------|
 | `cli.py` | argparse parsing (`add`, `list`, `delete`, `summary`, `export`), printing. No business rules. |
-| `service.py` | `ExpenseService` + `CATEGORIES`: all business logic — validation, category fallback to `other`, filtering, totals, export. |
+| `service.py` | `ExpenseService` + `CATEGORIES`: all business logic — validation, category fallback to `other`, filtering, totals; `export()` picks a strategy from `EXPORTERS`. |
+| `exporters.py` | Strategy for export formats: `Exporter` Protocol, `CsvExporter`, `JsonExporter`, `TxtExporter`, `EXPORTERS` registry. |
 | `storage.py` | `JsonStorage`: load/save the whole list to a JSON file (default `expenses.json`). |
 | `models.py` | `Expense` dataclass (`id, amount, category, description, date`) and dict conversion. |
 
 - New business logic goes in `service.py`, not `cli.py`. The CLI only parses args, calls the service, prints.
 - `service.py` must not print or read `sys.argv`; `storage.py` must not contain business rules.
+- New export formats: add a new exporter class in `exporters.py` + an `EXPORTERS` entry
+  (with a test in `tests/test_export.py`) — never a new `if/elif` branch in `service.py`.
 
 ## Setup
 
